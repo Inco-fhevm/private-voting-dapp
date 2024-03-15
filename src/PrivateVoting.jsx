@@ -6,7 +6,7 @@ import { Contract } from "ethers";
 import privateVotingABI from "./abi/privateVotingABI";
 
 let instance;
-const CONTRACT_ADDRESS = "0x02239e484D7ACD4A4d45f77644AEfdf298AcE65c";
+const CONTRACT_ADDRESS = "0xc05245621e0E61Ea7Eb37dEca26F683f77Facb62";
 
 function PrivateVoting() {
   const [inFavorVoteCount, setInFavorVoteCount] = useState("hidden");
@@ -34,7 +34,7 @@ function PrivateVoting() {
     setVoteCount(Number(e.target.value));
     console.log(instance);
     if (instance) {
-      const encrypted = instance.encrypt32(Number(e.target.value));
+      const encrypted = instance.encrypt8(Number(e.target.value));
       setEncryptedAmount(toHexString(encrypted));
     }
   };
@@ -48,7 +48,7 @@ function PrivateVoting() {
       } else {
         choice = 0;
       }
-      const encrypted = instance.encrypt32(choice);
+      const encrypted = instance.encrypt8(choice);
       setEncryptedChoice(toHexString(encrypted));
     }
   };
@@ -60,6 +60,10 @@ function PrivateVoting() {
       const contract = new Contract(CONTRACT_ADDRESS, privateVotingABI, signer);
       setLoading('Encrypting "30" and generating ZK proof...');
       setLoading("Sending transaction...");
+      console.info("encryptedAmount:");
+      console.info(encryptedAmount);
+      console.info("encryptedChoice:");
+      console.info(encryptedChoice);
       const transaction = await contract.castVote(
         "0x" + encryptedAmount,
         "0x" + encryptedChoice
@@ -82,7 +86,8 @@ function PrivateVoting() {
       setLoading("Decrypting Credit Score...");
       const { publicKey, signature } = await getTokenSignature(
         CONTRACT_ADDRESS,
-        signer.address
+        signer.address,
+        signer
       );
       const ciphertext = await contract.viewOwnVoteCount(publicKey, signature);
       console.log(ciphertext);
@@ -133,11 +138,14 @@ function PrivateVoting() {
       setLoading('Encrypting "30" and generating ZK proof...');
       setLoading("Sending transaction...");
       console.log("signer", typeof signer.address);
+      // eslint-disable-next-line no-unused-vars
       const result = await contract.revealResult();
       setLoading("Waiting for transaction validation...");
       setLoading("");
-      setAgainstVoteCount(Number(result[1]));
-      setInFavorVoteCount(Number(result[0]));
+      const inFavorCount = await contract.inFavorCount();
+      const againstCount = await contract.againstCount();
+      setAgainstVoteCount(Number(againstCount));
+      setInFavorVoteCount(Number(inFavorCount));
     } catch (e) {
       console.log(e);
       setLoading("");
