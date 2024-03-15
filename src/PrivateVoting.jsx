@@ -60,10 +60,6 @@ function PrivateVoting() {
       const contract = new Contract(CONTRACT_ADDRESS, privateVotingABI, signer);
       setLoading('Encrypting "30" and generating ZK proof...');
       setLoading("Sending transaction...");
-      console.info("encryptedAmount:");
-      console.info(encryptedAmount);
-      console.info("encryptedChoice:");
-      console.info(encryptedChoice);
       const transaction = await contract.castVote(
         "0x" + encryptedAmount,
         "0x" + encryptedChoice
